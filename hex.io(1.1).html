@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex.io</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;600;700&family=Rajdhani:wght@600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- External Custom Stylesheet -->
+    <link rel="stylesheet" href="hex.io(1.1).css">
+</head>
+<body>
+
+    <!-- Animated Background & Cursor Canvases -->
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="cursor-canvas"></canvas>
+    <div class="ambient-glow"></div>
+    <div class="scanlines"></div>
+
+    <!-- =====================================================================
+         CLICK-TO-ENTER SPLASH GATE (SHOWN IN PUBLIC PROFILE MODE)
+         ===================================================================== -->
+    <div id="splash-screen" class="hidden-splash">
+        <div class="text-center px-4">
+            <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2 mb-3 font-monospace">
+                <span class="d-inline-block rounded-circle bg-success me-2" style="width:8px;height:8px;"></span>
+                HEX.IO // AUDIO &amp; VISUALS READY
+            </span>
+            <h2 class="display-6 fw-bold text-white accent-glow-text mb-2">[ click to enter ]</h2>
+            <p class="text-secondary font-monospace small mb-0" id="splash-handle-label">@yourname</p>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         TOP NAVIGATION BAR
+         ===================================================================== -->
+    <nav id="top-navbar" class="navbar studio-navbar sticky-top py-2.5 px-3 px-md-4">
+        <div class="container-fluid d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <span class="hex-logo-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+                        <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"></polygon>
+                    </svg>
+                </span>
+                <span class="fw-bold tracking-tight text-white fs-5">hex<span style="color: var(--accent);">.io</span></span>
+                <span class="badge bg-dark border border-secondary text-secondary font-monospace d-none d-sm-inline-block">STUDIO</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button id="bg-cycle-btn" class="btn btn-sm btn-outline-secondary rounded-pill px-3 font-monospace text-light">
+                    <i class="bi bi-stars me-1" style="color: var(--accent);"></i>
+                    <span id="bg-mode-text">Leaves</span>
+                </button>
+                <button id="preview-splash-btn" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                    <span class="d-none d-md-inline">Launch Public Splash View</span>
+                    <span class="d-inline d-md-none">Public View</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Public View Floating Controls (Visible when viewing a shared link) -->
+    <div id="public-floating-bar" class="position-fixed top-0 end-0 p-3 d-none" style="z-index: 30;">
+        <button id="back-to-studio-btn" class="btn btn-sm btn-dark border-secondary rounded-pill px-3 shadow-lg">
+            <i class="bi bi-hexagon me-1" style="color: var(--accent);"></i> Create Your Own on hex.io
+        </button>
+    </div>
+
+    <!-- =====================================================================
+         MAIN WORKSPACE: SPLIT-SCREEN CREATOR STUDIO & LIVE PROFILE PREVIEW
+         ===================================================================== -->
+    <div class="container-xl py-4 py-lg-5 position-relative" style="z-index: 10;">
+        <div class="row g-4 align-items-start justify-content-center">
+
+            <!-- LEFT COLUMN: CREATOR STUDIO CONTROLS -->
+            <div id="studio-column" class="col-lg-6">
+                <div class="studio-panel p-4 shadow-lg">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-white">1. Choose Profile Template</h5>
+                            <small class="text-secondary">Pick a preset aesthetic for your hex.io card &amp; background</small>
+                        </div>
+                        <span id="preset-count-badge" class="badge rounded-pill px-2.5 py-1 font-monospace" style="background: rgba(var(--accent-rgb), 0.2); color: var(--accent);">11 Presets</span>
+                    </div>
+
+                    <!-- Template Selector Grid -->
+                    <div class="template-grid-scroll mb-4">
+                        <div class="row g-2" id="template-grid">
+                            <!-- Rendered via app.js -->
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary opacity-25 my-4">
+
+                    <!-- Identity & Customization -->
+                    <h5 class="fw-bold mb-3 text-white">2. Identity &amp; Links</h5>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small text-secondary mb-1">Claim Handle</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text font-monospace">hex.io/</span>
+                                <input id="input-username" type="text" class="form-control font-monospace" value="" placeholder="yourname">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small text-secondary mb-1">Display Name</label>
+                            <input id="input-display-name" type="text" class="form-control form-control-sm" value="" placeholder="Enter display name">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-8">
+                            <label class="form-label small text-secondary mb-1">Avatar Image URL</label>
+                            <input id="input-avatar" type="url" class="form-control form-control-sm font-monospace"
+                                   value="" placeholder="https://example.com/avatar.png">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small text-secondary mb-1">Accent Color</label>
+                            <input id="input-accent" type="color" class="form-control form-control-color w-100" value="#dc2626" style="height: 31px;">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small text-secondary mb-1">Location</label>
+                            <input id="input-location" type="text" class="form-control form-control-sm" value="" placeholder="City, Country">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small text-secondary mb-1">Discord Presence</label>
+                            <input id="input-discord" type="text" class="form-control form-control-sm" value="" placeholder="e.g. Chilling • Custom Status">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary mb-1">Typewriter Bio Phrases (comma separated)</label>
+                        <input id="input-bio" type="text" class="form-control form-control-sm"
+                               value="" placeholder="phrase one, phrase two, phrase three">
+                    </div>
+
+                    <!-- Dynamic Links & Gaming Tags Manager -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label small text-secondary mb-0">Social Links &amp; Gaming Tags</label>
+                            <button id="add-link-btn" type="button" class="btn btn-sm btn-outline-light py-0 px-2 rounded-pill" style="font-size: 0.75rem;">
+                                <i class="bi bi-plus-lg"></i> Add Link
+                            </button>
+                        </div>
+                        <div id="links-editor-list" class="d-flex flex-column gap-2">
+                            <!-- Rendered via app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Shareable Link Generator Box -->
+                    <div class="p-3 rounded-4 border border-secondary border-opacity-25 bg-black bg-opacity-40">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small fw-semibold text-white">
+                                <i class="bi bi-link-45deg me-1" style="color: var(--accent);"></i>Shareable hex.io Profile Link
+                            </span>
+                            <span id="short-url-preview" class="font-monospace text-secondary" style="font-size: 0.72rem;">https://hex.io/yourname</span>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button id="generate-share-btn" type="button" class="btn btn-accent rounded-3 py-2">
+                                <i class="bi bi-clipboard-check me-1"></i> Generate &amp; Copy Shareable Profile Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: LIVE INTERACTIVE PROFILE CARD -->
+            <div id="preview-column" class="col-lg-6 d-flex flex-column align-items-center justify-content-center">
+                <div id="preview-header-label" class="d-flex align-items-center gap-2 mb-3 text-secondary small font-monospace text-uppercase">
+                    <span class="d-inline-block rounded-circle bg-success" style="width:7px;height:7px;"></span>
+                    <span>Live Interactive Preview</span>
+                </div>
+
+                <!-- THE PROFILE CARD -->
+                <div id="profile-card" class="profile-card p-4 p-sm-5 text-center">
+                    <div class="card-banner-glow"></div>
+
+                    <!-- Avatar -->
+                    <div class="position-relative d-inline-block mb-3">
+                        <div id="card-avatar-frame" class="avatar-frame rounded-circle mx-auto">
+                            <img id="card-avatar-img"
+                                 src="https://placehold.co/240x240/12121a/dc2626?text=HEX"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/240x240/12121a/dc2626?text=HEX';"
+                                 alt="Avatar"
+                                 class="w-100 h-100 object-fit-cover rounded-circle bg-dark">
+                        </div>
+                        <span class="position-absolute bottom-0 end-0 translate-middle-x rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:20px;height:20px;">
+                            <span class="rounded-circle bg-success" style="width:12px;height:12px;"></span>
+                        </span>
+                    </div>
+
+                    <!-- Display Name + Verified Icon -->
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <h2 id="card-display-name" class="h3 fw-bold text-white mb-0 accent-glow-text">Your Name</h2>
+                        <i class="bi bi-patch-check-fill fs-5" style="color: var(--accent);" title="Verified on hex.io"></i>
+                    </div>
+
+                    <!-- Handle & Location -->
+                    <div class="font-monospace text-secondary small mb-3">
+                        <i class="bi bi-geo-alt me-1"></i><span id="card-location">Your Location</span>
+                        <span class="mx-1">•</span>
+                        <span id="card-username" class="text-light">@yourname</span>
+                    </div>
+
+                    <!-- Badges Row -->
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-white bg-opacity-10 border border-white border-opacity-10 mb-3">
+                        <span id="card-template-badge" class="badge bg-dark border border-secondary font-monospace">Ronin Samurai</span>
+                        <i class="bi bi-code-slash text-info" title="Developer"></i>
+                        <i class="bi bi-controller text-warning" title="Gamer"></i>
+                        <i class="bi bi-lightning-charge-fill text-success" title="Early Supporter"></i>
+                    </div>
+
+                    <!-- Typewriter Bio -->
+                    <p id="card-bio" class="small text-light opacity-75 mb-4 typing-cursor" style="min-height: 22px;"></p>
+
+                    <!-- Discord Rich Presence Widget -->
+                    <div class="rounded-4 bg-black bg-opacity-50 border border-white border-opacity-10 p-3 mb-4 d-flex align-items-center gap-3 text-start">
+                        <div class="position-relative flex-shrink-0">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center border border-white border-opacity-10"
+                                 style="width:46px;height:46px;background:rgba(99,102,241,0.18);">
+                                <i class="bi bi-discord fs-4 text-info"></i>
+                            </div>
+                            <span class="position-absolute bottom-0 end-0 rounded-circle bg-success border border-2 border-dark online-pulse" style="width:12px;height:12px;"></span>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span id="card-discord-tag" class="fw-bold small text-white text-truncate">yourname#0000</span>
+                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 font-monospace" style="font-size:0.65rem;">ONLINE</span>
+                            </div>
+                            <div id="card-discord-activity" class="small text-secondary text-truncate">No status set</div>
+                            <div id="card-discord-timer" class="font-monospace text-secondary" style="font-size:0.7rem;">00:00:00 elapsed</div>
+                        </div>
+                    </div>
+
+                    <!-- Links & Gaming Tags Grid -->
+                    <div id="card-links-grid" class="row g-2 mb-4">
+                        <!-- Rendered via app.js -->
+                    </div>
+
+                    <!-- Integrated Web Audio Synth Player & Visualizer -->
+                    <div class="rounded-4 bg-black bg-opacity-50 border border-white border-opacity-10 p-3 mb-3 text-start">
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width:36px;height:36px;background:rgba(var(--accent-rgb),0.18);border:1px solid rgba(var(--accent-rgb),0.4);">
+                                    <i class="bi bi-music-note-beamed" style="color: var(--accent);"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div id="track-title" class="fw-bold small text-white text-truncate">Midnight Synthwave</div>
+                                    <div id="track-artist" class="font-monospace text-secondary text-truncate" style="font-size:0.68rem;">hex.io WebAudio Synth</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                                <button id="prev-track-btn" class="btn btn-sm btn-dark border-0 px-2 text-secondary"><i class="bi bi-skip-start-fill"></i></button>
+                                <button id="play-pause-btn" class="btn btn-sm btn-accent rounded-3 px-2.5"><i id="play-pause-icon" class="bi bi-play-fill"></i></button>
+                                <button id="next-track-btn" class="btn btn-sm btn-dark border-0 px-2 text-secondary"><i class="bi bi-skip-end-fill"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <canvas id="visualizer-canvas" class="flex-grow-1 rounded-2 bg-black bg-opacity-50" style="height:26px;"></canvas>
+                            <div class="d-flex align-items-center gap-1" style="width: 86px;">
+                                <i class="bi bi-volume-up text-secondary small"></i>
+                                <input id="volume-slider" type="range" min="0" max="100" value="45" class="w-100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer -->
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white border-opacity-10 font-monospace text-secondary" style="font-size:0.74rem;">
+                        <span><i class="bi bi-eye me-1" style="color: var(--accent);"></i><span id="card-views" class="text-light">0</span> views</span>
+                        <span>hex.io</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Toast Container -->
+    <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 1080;">
+        <div id="liveToast" class="toast align-items-center text-bg-dark border border-secondary rounded-4 shadow-lg" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2 small">
+                    <span class="rounded-circle d-inline-block" style="width:8px;height:8px;background:var(--accent);"></span>
+                    <span id="toast-text">Copied to clipboard!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- External Application Logic -->
+    <script src="hex.io(1.1).js"></script>
+</body>
+</html>
